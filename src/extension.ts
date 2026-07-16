@@ -23,13 +23,9 @@ function getStatusbar() {
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
     const background = new Background();
-
     context.subscriptions.push(background);
-    const ok = await background.setup();
-    if (ok === false) {
-        return;
-    }
 
+    // 先挂命令与状态栏，避免 setup/patch 失败时整扩展「消失」
     context.subscriptions.push(
         vscode.commands.registerCommand('extension.background.info', function () {
             background.showWelcome();
@@ -70,6 +66,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         })
     );
     context.subscriptions.push(statusbar);
+
+    try {
+        await background.setup();
+    } catch (e: any) {
+        vscode.window.showErrorMessage(`Background setup failed: ${e?.message || e}`);
+    }
 }
 
 // this method is called when your extension is deactivated

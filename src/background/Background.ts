@@ -33,7 +33,7 @@ export class Background implements Disposable {
      */
     public cssFile = new CssFile(vscodePath.cssPath); // 没必要继承，组合就行
 
-    public jsFile = new JsPatchFile(vscodePath.jsPath);
+    private readonly jsFiles = vscodePath.jsPaths.map(p => new JsPatchFile(p));
 
     /**
      * Current config
@@ -87,8 +87,8 @@ export class Background implements Disposable {
             // if (VERSION === '2.0.0' || true) {
             //     this.showWelcome();
             // }
-            // 标识插件已启动过
-            await fs.promises.writeFile(TOUCH_JSFILE_PATH, vscodePath.jsPath, ENCODING);
+            // 标识插件已启动过（记录全部 patch 目标，供 uninstall 恢复）
+            await fs.promises.writeFile(TOUCH_JSFILE_PATH, JSON.stringify(vscodePath.jsPaths), ENCODING);
             return true;
         }
 
@@ -183,7 +183,12 @@ export class Background implements Disposable {
         }
 
         const scriptContent = PatchGenerator.create(this.config);
-        return this.jsFile.applyPatches(scriptContent);
+        // 串行写入，避免共用 lock 时并行互卡；单文件失败不阻断其它 workbench
+        const results: boolean[] = [];
+        for (const f of this.jsFiles) {
+            results.push(await f.applyPatches(scriptContent));
+        }
+        return results.some(Boolean);
     }
 
     // #endregion
@@ -201,12 +206,14 @@ export class Background implements Disposable {
 
         await this.checkFirstload(); // 是否初次加载插件
 
-        const patchType = await this.jsFile.getPatchType(); // css 文件目前状态
+        const needsPatchUpdate = (await Promise.all(this.jsFiles.map(f => f.getPatchType()))).some(t =>
+            [EFilePatchType.Legacy, EFilePatchType.None].includes(t)
+        );
 
-        // 如果「开启」状态，文件不是「latest」，则进行更新
+        // 如果「开启」状态，任一 workbench 不是「latest」，则进行更新
         if (this.config.enabled) {
-            // 此时一般为 vscode更新、background更新
-            if ([EFilePatchType.Legacy, EFilePatchType.None].includes(patchType)) {
+            // 此时一般为 vscode更新、background更新、Cursor 新增 glass workbench
+            if (needsPatchUpdate) {
                 if (await this.applyPatch()) {
                     vsHelp.showInfoRestart(l10n.t('Background has been changed! Please restart.'));
                 }
@@ -233,7 +240,7 @@ export class Background implements Disposable {
      * @memberof Background
      */
     public hasInstalled(): Promise<boolean> {
-        return this.jsFile.hasPatched();
+        return Promise.all(this.jsFiles.map(f => f.hasPatched())).then(results => results.some(Boolean));
     }
 
     /**
@@ -244,7 +251,8 @@ export class Background implements Disposable {
      */
     public async uninstall(): Promise<boolean> {
         await this.removeLegacyCssPatch();
-        return this.jsFile.restore();
+        const results = await Promise.all(this.jsFiles.map(f => f.restore()));
+        return results.every(Boolean);
     }
 
     /**

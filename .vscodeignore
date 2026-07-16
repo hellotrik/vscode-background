@@ -1,6 +1,9 @@
 .github/**
 .vscode/**
 .vscode-test/**
+abs/**
+doc/**
+docs/**
 src/**
 .gitignore
 .yarnrc

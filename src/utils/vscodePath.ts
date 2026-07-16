@@ -1,3 +1,4 @@
+import fs from 'fs';
 import path from 'path';
 
 import { _ } from './index';
@@ -24,18 +25,27 @@ const cssPath = (() => {
     return webPath;
 })();
 
-const jsPath = (() => {
+const workbenchDir = path.join(base, 'vs', 'workbench');
+const desktopJsPath = path.join(workbenchDir, 'workbench.desktop.main.js');
+const glassJsPath = path.join(workbenchDir, 'workbench.glass.main.js');
+
+const jsPaths = (() => {
     // See https://code.visualstudio.com/api/references/vscode-api#env
 
     // desktop
     // /Applications/Visual Studio Code.app/Contents/Resources/app/out/vs/workbench/workbench.desktop.main.js
     if (_.isDesktop) {
-        return path.join(base, 'vs/workbench/workbench.desktop.main.js');
+        const paths = [desktopJsPath];
+        // Cursor Agents Window (Glass workbench)
+        if (fs.existsSync(glassJsPath)) {
+            paths.push(glassJsPath);
+        }
+        return paths;
     }
 
     // code-server
     // /usr/lib/code-server/lib/vscode/out/vs/code/browser/workbench/workbench.js
-    return path.join(base, 'vs/code/browser/workbench/workbench.js');
+    return [path.join(base, 'vs/code/browser/workbench/workbench.js')];
 })();
 
 export const vscodePath = {
@@ -49,7 +59,15 @@ export const vscodePath = {
      */
     cssPath,
     /**
-     * js 文件地址
+     * js 文件地址（主 workbench，兼容旧逻辑）
      */
-    jsPath
+    jsPath: jsPaths[0],
+    /**
+     * 需要 patch 的 workbench js（desktop + Cursor glass）
+     */
+    jsPaths,
+    /**
+     * Cursor Agents Window workbench（不存在则为 undefined）
+     */
+    glassJsPath: fs.existsSync(glassJsPath) ? glassJsPath : undefined
 };

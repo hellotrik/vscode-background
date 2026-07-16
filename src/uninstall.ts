@@ -15,20 +15,47 @@ import fs from 'fs';
 import { JsPatchFile } from './background/PatchFile/PatchFile.javascript';
 import { ENCODING, TOUCH_JSFILE_PATH } from './utils/constants';
 
+function parseTouchPaths(raw: string): string[] {
+    const trimmed = raw.trim();
+    if (!trimmed) {
+        return [];
+    }
+
+    try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+            return parsed.filter((p): p is string => typeof p === 'string' && p.length > 0);
+        }
+    } catch {
+        // 旧版 touch 文件仅存单条路径
+    }
+
+    return [trimmed];
+}
+
 async function uninstall() {
     try {
-        const jsFilePath = (await fs.promises.readFile(TOUCH_JSFILE_PATH, ENCODING)).trim();
-        if (!jsFilePath) {
-            return;
-        }
-        const file = new JsPatchFile(jsFilePath);
-        const hasPatched = await file.hasPatched();
-        if (!hasPatched) {
+        const raw = await fs.promises.readFile(TOUCH_JSFILE_PATH, ENCODING);
+        const paths = parseTouchPaths(raw);
+        if (!paths.length) {
             return;
         }
 
-        await file.restore();
-        console.log('vscode background has been auto uninstalled.');
+        let restored = false;
+        for (const jsFilePath of paths) {
+            const file = new JsPatchFile(jsFilePath);
+            const hasPatched = await file.hasPatched();
+            if (!hasPatched) {
+                continue;
+            }
+
+            await file.restore();
+            restored = true;
+        }
+
+        if (restored) {
+            console.log('vscode background has been auto uninstalled.');
+        }
     } catch (ex: any) {
         console.error('vscode background uninstalled fail: ' + ex.message);
     }
