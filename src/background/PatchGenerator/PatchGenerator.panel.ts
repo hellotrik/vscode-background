@@ -13,12 +13,14 @@ export class PanelPatchGenerator extends FullscreenPatchGenerator<PanelPatchGene
             .split-view-view > .part.panel::after {
                 content: '';
                 position: absolute;
-                ${blur ? `
+                ${blur
+                    ? `
                     width: calc(100% + ${blur * 4}px);
                     height: calc(100% + ${blur * 4}px);
                     top: -${blur * 2}px;
                     left: -${blur * 2}px;
-                ` : `
+                `
+                    : `
                     width: 100%;
                     height: 100%;
                     top: 0;
