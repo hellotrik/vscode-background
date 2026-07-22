@@ -2,7 +2,7 @@
   "name": "background",
   "displayName": "background",
   "description": "Bring background images to your vscode",
-  "version": "2.0.5",
+  "version": "2.0.6",
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "vscode:uninstall": "node ./out/uninstall",
@@ -175,6 +175,7 @@
           "default": {
             "images": [],
             "opacity": 0.1,
+            "blur": 0,
             "size": "cover",
             "position": "center",
             "interval": 0,
@@ -197,6 +198,13 @@
               "minimum": 0,
               "maximum": 0.6,
               "markdownDescription": "%extension.background.fullscreen.opacity%"
+            },
+            "blur": {
+              "type": "number",
+              "default": 0,
+              "minimum": 0,
+              "maximum": 100,
+              "markdownDescription": "%extension.background.fullscreen.blur%"
             },
             "size": {
               "type": "string",
@@ -226,6 +234,7 @@
           "default": {
             "images": [],
             "opacity": 0.1,
+            "blur": 0,
             "size": "cover",
             "position": "center",
             "interval": 0,
@@ -237,6 +246,9 @@
             },
             "opacity": {
               "$ref": "#/properties/background.fullscreen/properties/opacity"
+            },
+            "blur": {
+              "$ref": "#/properties/background.fullscreen/properties/blur"
             },
             "size": {
               "$ref": "#/properties/background.fullscreen/properties/size"
@@ -258,6 +270,7 @@
           "default": {
             "images": [],
             "opacity": 0.1,
+            "blur": 0,
             "size": "cover",
             "position": "center",
             "interval": 0,
@@ -269,6 +282,9 @@
             },
             "opacity": {
               "$ref": "#/properties/background.fullscreen/properties/opacity"
+            },
+            "blur": {
+              "$ref": "#/properties/background.fullscreen/properties/blur"
             },
             "size": {
               "$ref": "#/properties/background.fullscreen/properties/size"

@@ -7,16 +7,23 @@ export class PanelPatchGenerator extends FullscreenPatchGenerator<PanelPatchGene
     protected readonly cssvariable = '--background-panel-img';
 
     protected getStyle(): string {
-        const { size, position, opacity } = this.curConfig;
+        const { size, position, opacity, blur } = this.curConfig;
 
         return css`
             .split-view-view > .part.panel::after {
                 content: '';
                 position: absolute;
-                width: 100%;
-                height: 100%;
-                top: 0;
-                left: 0;
+                ${blur ? `
+                    width: calc(100% + ${blur * 4}px);
+                    height: calc(100% + ${blur * 4}px);
+                    top: -${blur * 2}px;
+                    left: -${blur * 2}px;
+                ` : `
+                    width: 100%;
+                    height: 100%;
+                    top: 0;
+                    left: 0;
+                `}
                 background-position: ${position};
                 background-repeat: no-repeat;
                 background-size: ${size};
@@ -24,7 +31,9 @@ export class PanelPatchGenerator extends FullscreenPatchGenerator<PanelPatchGene
                 opacity: ${opacity};
                 transition: 1s;
                 background-image: var(${this.cssvariable});
+                ${blur ? `filter: blur(${blur}px);` : ''}
             }
+            ${blur ? '.split-view-view > .part.panel { overflow: hidden; }' : ''}
         `;
     }
 }

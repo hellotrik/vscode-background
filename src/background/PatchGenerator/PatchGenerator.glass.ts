@@ -11,7 +11,7 @@ export class GlassPatchGenerator extends FullscreenPatchGenerator<GlassPatchGene
     protected cssvariable = '--background-glass-img';
 
     protected getStyle(): string {
-        const { size, position, opacity } = this.curConfig;
+        const { size, position, opacity, blur } = this.curConfig;
 
         return css`
             .agent-layout,
@@ -27,7 +27,7 @@ export class GlassPatchGenerator extends FullscreenPatchGenerator<GlassPatchGene
                 content: '';
                 position: fixed;
                 z-index: 0;
-                inset: 0;
+                ${blur ? `inset: -${blur * 2}px;` : 'inset: 0;'}
                 pointer-events: none;
                 background-position: ${position};
                 background-repeat: no-repeat;
@@ -35,6 +35,11 @@ export class GlassPatchGenerator extends FullscreenPatchGenerator<GlassPatchGene
                 opacity: ${opacity};
                 transition: 1s;
                 background-image: var(${this.cssvariable});
+                ${blur ? `filter: blur(${blur}px);` : ''}
+            }
+
+            .agent-layout {
+                overflow: hidden;
             }
 
             .agent-layout > * {
